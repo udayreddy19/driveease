@@ -6,6 +6,7 @@ function renderAdminPage() {
   // Check admin access
   if (!AppState.isLoggedIn || (AppState.currentUser && AppState.currentUser.role !== 'admin')) {
     return `
+    
       <div class="admin-page">
         <div class="container">
           <div class="empty-state" style="min-height: 60vh;">
