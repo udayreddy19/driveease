@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DriveEase — Self-Drive Car Rental | Book Cars Online</title>
+  <meta name="description" content="India's #1 self-drive car rental platform. Choose from 25,000+ cars across 50+ cities. Book a self-drive car in minutes. Hatchbacks, Sedans, SUVs, Luxury cars available.">
+  <meta name="keywords" content="self drive car rental, car rental India, rent a car, DriveEase, ZoomCar alternative, car hire">
+  <meta name="author" content="DriveEase">
+  <meta name="theme-color" content="#06080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DriveEase">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="DriveEase — Self-Drive Car Rental">
+  <meta property="og:description" content="Book self-drive cars from ₹99/hr. 25,000+ cars across 50+ cities.">
+  <meta property="og:type" content="website">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🚗</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🚗</text></svg>">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/datepicker.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading state while JS loads -->
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #06080f;">
+      <div style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem; animation: float 2s ease-in-out infinite;">🚗</div>
+        <div style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: #f1f5f9;">
+          Drive<span style="color: #60a5fa;">Ease</span>
+        </div>
+        <div style="margin-top: 1rem; width: 120px; height: 3px; background: #111631; border-radius: 999px; margin: 1rem auto; overflow: hidden;">
+          <div style="width: 40%; height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 999px; animation: shimmer 1.5s ease-in-out infinite;"></div>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">Loading your ride...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts — order matters: data → utils → components → pages → app -->
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/router.js"></script>
+
+  <!-- Components -->
+  <script src="js/components/toast.js"></script>
+  <script src="js/components/datePicker.js"></script>
+  <script src="js/components/invoice.js"></script>
+  <script src="js/components/reviewCard.js"></script>
+  <script src="js/components/carCard.js"></script>
+  <script src="js/components/searchBar.js"></script>
+  <script src="js/components/modal.js"></script>
+  <script src="js/components/navbar.js"></script>
+  <script src="js/components/footer.js"></script>
+  <script src="js/components/bottomNav.js"></script>
+
+  <!-- Pages -->
+  <script src="js/pages/notFound.js"></script>
+  <script src="js/pages/home.js"></script>
+  <script src="js/pages/search.js"></script>
+  <script src="js/pages/carDetail.js"></script>
+  <script src="js/pages/booking.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/hostDashboard.js"></script>
+  <script src="js/pages/admin.js"></script>
+  <script src="js/pages/finance.js"></script>
+
+  <!-- Main App -->
+  <script src="js/app.js"></script>
+</body>
+</html>
