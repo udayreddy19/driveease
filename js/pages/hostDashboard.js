@@ -3,7 +3,7 @@
 // ========================================
 
 function renderHostDashboardPage() {
-  const isHost = AppState.isLoggedIn;
+  const isHost = AppState.currentUser;
 
   if (!isHost) {
     // Show "Become a Host" landing
@@ -27,21 +27,26 @@ function renderHostDashboardPage() {
         </div>
 
         <!-- Stats -->
-        <div class="host-stats-grid animate-fade-in-up">
-          <div class="host-stat-card">
-            <div class="host-stat-icon">💰</div>
-            <div class="host-stat-value">₹${(hostListings.length * 12500).toLocaleString()}</div>
-            <div class="host-stat-label">Total Earnings</div>
+        <div class="stats-grid animate-fade-in-up">
+          <div class="stat-card">
+            <div class="stat-icon primary">💰</div>
+            <div class="stat-value">₹${(hostListings.length * 12500).toLocaleString()}</div>
+            <div class="stat-label">Total Earnings</div>
           </div>
-          <div class="host-stat-card">
-            <div class="host-stat-icon">🚗</div>
-            <div class="host-stat-value">${hostListings.length}</div>
-            <div class="host-stat-label">Active Listings</div>
+          <div class="stat-card">
+            <div class="stat-icon success">🚗</div>
+            <div class="stat-value">${hostListings.length}</div>
+            <div class="stat-label">Active Listings</div>
           </div>
-          <div class="host-stat-card">
-            <div class="host-stat-icon">📈</div>
-            <div class="host-stat-value">${hostListings.length * 15}</div>
-            <div class="host-stat-label">Completed Trips</div>
+          <div class="stat-card">
+            <div class="stat-icon warning">📈</div>
+            <div class="stat-value">${hostListings.length * 15}</div>
+            <div class="stat-label">Completed Trips</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon accent">⭐</div>
+            <div class="stat-value">4.8</div>
+            <div class="stat-label">Average Rating</div>
           </div>
         </div>
 
@@ -86,58 +91,47 @@ function renderBecomeHostPage() {
         </div>
 
         <!-- Benefits -->
-        <div class="features-grid" style="margin-top: var(--space-8);">
-          <div class="feature-card reveal">
-            <div class="feature-icon">💵</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--space-6); margin-top: var(--space-8);">
+          <div class="card" style="padding: var(--space-6); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: var(--space-3);">💵</div>
             <h4>Earn Passively</h4>
-            <p>Make money while your car sits idle. Average hosts earn ₹30,000-50,000/month.</p>
+            <p style="font-size: var(--text-sm); color: var(--color-text-tertiary); margin-top: var(--space-2);">Make money while your car sits idle. Average hosts earn ₹30,000-50,000/month.</p>
           </div>
-          <div class="feature-card reveal">
-            <div class="feature-icon">🛡️</div>
+          <div class="card" style="padding: var(--space-6); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: var(--space-3);">🛡️</div>
             <h4>Full Protection</h4>
-            <p>Comprehensive insurance covers your car during every rental. Peace of mind guaranteed.</p>
+            <p style="font-size: var(--text-sm); color: var(--color-text-tertiary); margin-top: var(--space-2);">Comprehensive insurance covers your car during every rental. Peace of mind guaranteed.</p>
           </div>
-          <div class="feature-card reveal">
-            <div class="feature-icon">📊</div>
+          <div class="card" style="padding: var(--space-6); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: var(--space-3);">📊</div>
             <h4>Track Everything</h4>
-            <p>GPS tracking, real-time monitoring, and detailed analytics for all your listings.</p>
+            <p style="font-size: var(--text-sm); color: var(--color-text-tertiary); margin-top: var(--space-2);">GPS tracking, real-time monitoring, and detailed analytics for all your listings.</p>
           </div>
-          <div class="feature-card reveal">
-            <div class="feature-icon">⚡</div>
+          <div class="card" style="padding: var(--space-6); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: var(--space-3);">⚡</div>
             <h4>Instant Payouts</h4>
-            <p>Get paid instantly after every trip. No waiting, no hassle. Direct bank transfer.</p>
+            <p style="font-size: var(--text-sm); color: var(--color-text-tertiary); margin-top: var(--space-2);">Get paid instantly after every trip. No waiting, no hassle. Direct bank transfer.</p>
           </div>
-        </div>
+          </div>
+
 
         <!-- How it works -->
         <div class="section" style="text-align: center;">
-          <div class="section-header reveal">
-            <h2>How Hosting Works</h2>
-            <p>Three simple steps to start earning</p>
-            <div class="section-line"></div>
-          </div>
-          <div class="how-it-works-grid reveal">
-            <div class="step-card">
-              <div class="step-icon">
-                <span class="step-number">1</span>
-                📝
-              </div>
+          <h2 class="section-title">How Hosting Works</h2>
+            <p class="section-subtitle">Three simple steps to start earning</p>
+          <div class="how-it-works">
+            <div class="how-step">
+              <div class="how-step-number">1</div>
               <h4>List Your Car</h4>
               <p>Add your car details, photos, and set your pricing. Takes just 5 minutes.</p>
             </div>
-            <div class="step-card">
-              <div class="step-icon">
-                <span class="step-number">2</span>
-                ✅
-              </div>
+            <div class="how-step">
+              <div class="how-step-number">2</div>
               <h4>Get Verified</h4>
               <p>Our team inspects and approves your car. GPS device installed for free.</p>
             </div>
-            <div class="step-card">
-              <div class="step-icon">
-                <span class="step-number">3</span>
-                💰
-              </div>
+            <div class="how-step">
+              <div class="how-step-number">3</div>
               <h4>Start Earning</h4>
               <p>Guests book your car and you earn money. It's that simple!</p>
             </div>
@@ -165,7 +159,7 @@ function renderHostOverview(listings) {
   return `
     <div class="animate-fade-in">
       <h3 style="margin-bottom: var(--space-4);">Recent Activity</h3>
-      <div style="padding: var(--space-6); background: var(--gradient-card); border: var(--glass-border); border-radius: var(--radius-lg);">
+      <div style="padding: var(--space-6); background: white; border: 1px solid var(--color-border); border-radius: var(--radius-xl);">
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
           ${listings.slice(0, 5).map((l, i) => `
             <div style="display: flex; align-items: center; gap: var(--space-4); padding-bottom: var(--space-4); ${i < listings.length - 1 ? 'border-bottom: 1px solid var(--color-border);' : ''}">
@@ -231,7 +225,7 @@ function renderAddCarForm() {
     <div class="listing-form animate-fade-in-up">
       <h3 style="margin-bottom: var(--space-6);">List Your Car</h3>
       <form onsubmit="handleAddCar(event)" id="add-car-form">
-        <div class="listing-form-grid">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
           <div class="input-group">
             <label for="car-name-input">Car Name</label>
             <input type="text" class="input" id="car-name-input" placeholder="e.g. Hyundai Creta" required>
@@ -366,5 +360,6 @@ function removeListing(id) {
 }
 
 function initHostPage() {
-  initScrollReveal();
+  // Animations handled by CSS now
 }
+

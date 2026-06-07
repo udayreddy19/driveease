@@ -92,3 +92,29 @@ function getTomorrowDate() {
   d.setDate(d.getDate() + 1);
   return d.toISOString().split('T')[0];
 }
+
+// ---- Date Formatting Utilities ----
+function getShortDate(type) {
+  const d = type === 'pickup' ? (AppState.pickupDate || new Date()) : (AppState.dropoffDate || new Date(Date.now() + 86400000 * 2));
+  const date = new Date(d);
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function getShortTime(type) {
+  const d = type === 'pickup' ? (AppState.pickupDate || new Date()) : (AppState.dropoffDate || new Date(Date.now() + 86400000 * 2));
+  const date = new Date(d);
+  return date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function formatSearchDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+

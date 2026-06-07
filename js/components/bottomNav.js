@@ -1,40 +1,53 @@
 // ========================================
-// DriveEase — Bottom Navigation Component
+// DriveEase — Bottom Nav (Light Theme)
 // ========================================
 
 function renderBottomNav() {
-  const currentHash = window.location.hash.slice(1) || '/';
-  const bookingCount = (AppState.bookings || []).filter(b => b.status === 'upcoming').length;
-
-  const tabs = [
-    { route: '/', icon: '🏠', label: 'Home', match: (h) => h === '/' },
-    { route: '/search', icon: '🔍', label: 'Search', match: (h) => h.startsWith('/search') },
-    { route: '/dashboard', icon: '📋', label: 'Trips', match: (h) => h.startsWith('/dashboard'), badge: bookingCount },
-    { route: '/finance', icon: '💰', label: 'Wallet', match: (h) => h.startsWith('/finance') },
-    { route: AppState.isLoggedIn ? '/dashboard' : '', icon: '👤', label: 'Profile', match: (h) => false, action: AppState.isLoggedIn ? null : "openAuthModal('login')" },
-  ];
+  const user = AppState.currentUser;
+  const hash = window.location.hash.slice(1) || '/';
 
   return `
-    <nav class="bottom-nav" id="bottom-nav">
+    <div class="bottom-nav">
       <div class="bottom-nav-inner">
-        ${tabs.map(tab => `
-          <${tab.action ? 'button' : 'a'}
-            class="bottom-nav-item ${tab.match(currentHash) ? 'active' : ''}"
-            ${tab.action ? `onclick="${tab.action}"` : `href="#${tab.route}"`}
-            ${tab.route === '' && !tab.action ? 'onclick="openAuthModal(\'login\')"' : ''}>
-            <span class="bottom-nav-icon">${tab.icon}</span>
-            <span class="bottom-nav-label">${tab.label}</span>
-            ${tab.badge && tab.badge > 0 ? `<span class="bottom-nav-badge">${tab.badge}</span>` : ''}
-          </${tab.action ? 'button' : 'a'}>
-        `).join('')}
+        <a href="#/" class="bottom-nav-item ${hash === '/' ? 'active' : ''}">
+          <span class="icon">🏠</span>
+          <span>Home</span>
+        </a>
+        <a href="#/search" class="bottom-nav-item ${hash.startsWith('/search') ? 'active' : ''}">
+          <span class="icon">🔍</span>
+          <span>Search</span>
+        </a>
+        ${user ? `
+          <a href="#/dashboard?tab=bookings" class="bottom-nav-item ${hash.startsWith('/dashboard') ? 'active' : ''}">
+            <span class="icon">🚗</span>
+            <span>Bookings</span>
+          </a>
+          <a href="#/finance" class="bottom-nav-item ${hash.startsWith('/finance') ? 'active' : ''}">
+            <span class="icon">💰</span>
+            <span>Wallet</span>
+          </a>
+          <a href="#/dashboard" class="bottom-nav-item ${hash === '/dashboard' ? 'active' : ''}">
+            <span class="icon">👤</span>
+            <span>Profile</span>
+          </a>
+        ` : `
+          <a href="javascript:void(0)" class="bottom-nav-item" onclick="openAuthModal()">
+            <span class="icon">❤️</span>
+            <span>Favorites</span>
+          </a>
+          <a href="javascript:void(0)" class="bottom-nav-item" onclick="openAuthModal()">
+            <span class="icon">👤</span>
+            <span>Login</span>
+          </a>
+        `}
       </div>
-    </nav>
+    </div>
   `;
 }
 
 function updateBottomNav() {
-  const nav = document.getElementById('bottom-nav');
-  if (nav) {
-    nav.outerHTML = renderBottomNav();
+  const container = document.getElementById('bottom-nav-container');
+  if (container) {
+    container.innerHTML = renderBottomNav();
   }
 }

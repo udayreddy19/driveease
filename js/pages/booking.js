@@ -1,422 +1,299 @@
 // ========================================
-// DriveEase — Booking Flow Page
+// DriveEase — Booking / Payment (ZoomCar-Style)
 // ========================================
 
-function renderBookingPage(params = {}) {
-  const carId = parseInt(params.id);
-  const car = AppData.CARS.find(c => c.id === carId);
-
+function renderBookingPage(carId) {
+  const car = AppData.CARS.find(c => c.id === parseInt(carId));
   if (!car) return renderNotFoundPage();
 
-  if (!AppState.isLoggedIn) {
-    setTimeout(() => {
-      openAuthModal('login');
-      showToast('info', 'Login Required', 'Please login to complete booking');
-    }, 300);
-    return `
-      <div class="booking-page">
+  const user = AppState.currentUser;
+  if (!user) {
+    setTimeout(() => openAuthModal(), 100);
+    return `<div class="empty-state" style="padding-top: 120px;"><div class="empty-state-icon">🔐</div><h3>Login Required</h3></div>`;
+  }
+
+  const tripProtection = Math.round(car.pricePerDay * 0.15);
+  const deposit = car.type === 'luxury' ? 2000 : car.type === 'suv' ? 1000 : 500;
+  const gst = Math.round(car.pricePerDay * 0.18);
+  const total = car.pricePerDay + tripProtection + deposit + gst;
+
+  return `
+    <div class="payment-page">
+      <div class="payment-header">
         <div class="container">
-          <div class="empty-state" style="min-height: 60vh;">
-            <div class="empty-state-icon">🔒</div>
-            <h3>Login Required</h3>
-            <p>Please login or create an account to book a car.</p>
+          <div style="display: flex; align-items: center; gap: var(--space-4);">
+            <button class="detail-back" onclick="history.back()">← Back</button>
+            <h3 style="font-size: var(--text-lg);">Complete Payment</h3>
+            <div style="margin-left: auto; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-warning); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--color-warning); font-weight: 600;">
+              price locked for <strong>09:38</strong> Minutes
+            </div>
           </div>
         </div>
       </div>
-    `;
-  }
 
-  // Initialize booking state
-  if (!AppState.currentBooking || AppState.currentBooking.carId !== carId) {
-    AppState.currentBooking = {
-      carId,
-      pickup: '',
-      dropoff: '',
-      location: 'hub',
-      addons: [],
-      step: 1,
-    };
-  }
-
-  const step = AppState.currentBooking.step || 1;
-
-  return `
-    <div class="booking-page">
       <div class="container">
-        <div class="booking-page-content">
-          <!-- Car Summary -->
-          <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8); padding: var(--space-4); background: var(--gradient-card); border: var(--glass-border); border-radius: var(--radius-lg);">
-            <div style="width: 80px; height: 60px; background: ${car.color}15; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
-              ${car.emoji}
-            </div>
-            <div style="flex: 1;">
-              <h4 style="margin-bottom: 2px;">${car.name}</h4>
-              <p style="font-size: var(--text-sm); color: var(--color-text-tertiary);">${car.brand} · ${car.type} · ${car.transmission}</p>
-            </div>
-            <div class="price">
-              <span class="price-amount">₹${car.pricePerHour}</span>
-              <span class="price-unit">/hr</span>
-            </div>
-          </div>
-
-          <!-- Progress Steps -->
-          <div class="progress-steps">
-            <div class="progress-step ${step >= 1 ? (step > 1 ? 'completed' : 'active') : ''}">
-              <div class="progress-step-circle">${step > 1 ? '✓' : '1'}</div>
-              <span class="progress-step-label">Trip Details</span>
-            </div>
-            <div class="progress-step-line ${step > 1 ? 'completed' : ''}"></div>
-            <div class="progress-step ${step >= 2 ? (step > 2 ? 'completed' : 'active') : ''}">
-              <div class="progress-step-circle">${step > 2 ? '✓' : '2'}</div>
-              <span class="progress-step-label">Add-ons</span>
-            </div>
-            <div class="progress-step-line ${step > 2 ? 'completed' : ''}"></div>
-            <div class="progress-step ${step >= 3 ? (step > 3 ? 'completed' : 'active') : ''}">
-              <div class="progress-step-circle">${step > 3 ? '✓' : '3'}</div>
-              <span class="progress-step-label">Payment</span>
-            </div>
-            <div class="progress-step-line ${step > 3 ? 'completed' : ''}"></div>
-            <div class="progress-step ${step >= 4 ? 'active' : ''}">
-              <div class="progress-step-circle">4</div>
-              <span class="progress-step-label">Confirmed</span>
-            </div>
-          </div>
-
-          <!-- Step Content -->
-          ${step === 1 ? renderBookingStep1(car) : ''}
-          ${step === 2 ? renderBookingStep2(car) : ''}
-          ${step === 3 ? renderBookingStep3(car) : ''}
-          ${step === 4 ? renderBookingStep4(car) : ''}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderBookingStep1(car) {
-  const booking = AppState.currentBooking;
-  return `
-    <div class="booking-step-content animate-fade-in-up">
-      <h3 class="booking-step-title">📅 Trip Details</h3>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
-        ${renderDateTimePicker('booking-pickup', 'Pickup Date & Time', booking.pickup)}
-        ${renderDateTimePicker('booking-dropoff', 'Drop-off Date & Time', booking.dropoff)}
-      </div>
-
-      <div class="input-group" style="margin-top: var(--space-4);">
-        <label for="booking-location">📍 Pickup Location</label>
-        <select class="input select" id="booking-location">
-          <option value="hub" ${booking.location === 'hub' ? 'selected' : ''}>
-            DriveEase Hub - ${AppData.CITIES.find(c => c.id === car.city)?.name || 'City Center'}
-          </option>
-          <option value="airport" ${booking.location === 'airport' ? 'selected' : ''}>Airport Pickup (+₹200)</option>
-          <option value="delivery" ${booking.location === 'delivery' ? 'selected' : ''}>Home Delivery (+₹300)</option>
-        </select>
-      </div>
-
-      <div class="input-group" style="margin-top: var(--space-4);">
-        <label for="booking-notes">📝 Special Instructions (optional)</label>
-        <textarea class="input" id="booking-notes" rows="3" placeholder="Any special requests or instructions..."></textarea>
-      </div>
-
-      <div class="booking-actions">
-        <a href="#/car/${car.id}" class="btn btn-secondary" style="flex: 1;">← Back</a>
-        <button class="btn btn-primary" style="flex: 2;" onclick="nextBookingStep()" id="step1-next-btn">
-          Continue to Add-ons →
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function renderBookingStep2(car) {
-  const selectedAddons = AppState.currentBooking.addons || [];
-
-  return `
-    <div class="booking-step-content animate-fade-in-up">
-      <h3 class="booking-step-title">🛡️ Add-ons & Extras</h3>
-      <p style="margin-bottom: var(--space-6); color: var(--color-text-secondary);">Enhance your trip with these optional add-ons</p>
-
-      <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-        ${AppData.ADDONS.map(addon => `
-          <div class="addon-card ${selectedAddons.includes(addon.id) ? 'selected' : ''}"
-            onclick="toggleAddon('${addon.id}')" id="addon-${addon.id}">
-            <div class="addon-info">
-              <span class="addon-icon">${addon.icon}</span>
-              <div>
-                <div class="addon-name">${addon.name}</div>
-                <div class="addon-desc">${addon.description}</div>
+        <p style="font-size: var(--text-sm); color: var(--color-text-tertiary); margin-top: var(--space-6);">Choose the method you prefer</p>
+        <div class="payment-layout">
+          <!-- Payment Methods Sidebar -->
+          <div class="payment-methods">
+            <h4 style="padding: var(--space-4) var(--space-5); font-size: var(--text-base); border-bottom: 1px solid var(--color-border-light);">Payment Options</h4>
+            <div class="payment-method-item active" onclick="selectPaymentMethod('upi', this)">
+              <div class="payment-method-icon">📱</div>
+              <div class="payment-method-label">
+                <h4>UPI</h4>
+                <p>Google Pay, PhonePe, BHIM UPI</p>
               </div>
             </div>
-            <div class="addon-price">₹${addon.price}</div>
+            <div class="payment-method-item" onclick="selectPaymentMethod('card', this)">
+              <div class="payment-method-icon">💳</div>
+              <div class="payment-method-label">
+                <h4>Credit / Debit / ATM Card</h4>
+                <p>Enabled for online transactions</p>
+              </div>
+            </div>
+            <div class="payment-method-item" onclick="selectPaymentMethod('netbanking', this)">
+              <div class="payment-method-icon">🏛️</div>
+              <div class="payment-method-label">
+                <h4>Net Banking</h4>
+                <p>All major banks supported</p>
+              </div>
+            </div>
+            <div class="payment-method-item" onclick="selectPaymentMethod('wallet', this)">
+              <div class="payment-method-icon">💰</div>
+              <div class="payment-method-label">
+                <h4>DriveEase Wallet</h4>
+                <p>Balance: ₹${(user.walletBalance || 0).toLocaleString()}</p>
+              </div>
+            </div>
           </div>
-        `).join('')}
-      </div>
 
-      <div class="booking-actions">
-        <button class="btn btn-secondary" style="flex: 1;" onclick="prevBookingStep()">← Back</button>
-        <button class="btn btn-primary" style="flex: 2;" onclick="nextBookingStep()" id="step2-next-btn">
-          Continue to Payment →
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function renderBookingStep3(car) {
-  const booking = AppState.currentBooking;
-  const { hours, days } = calculateDuration(booking.pickup, booking.dropoff);
-  const baseFare = days >= 1 ? car.pricePerDay * days : car.pricePerHour * Math.max(4, hours);
-  const locationFee = booking.location === 'airport' ? 200 : booking.location === 'delivery' ? 300 : 0;
-  const addonTotal = (booking.addons || []).reduce((sum, id) => {
-    const addon = AppData.ADDONS.find(a => a.id === id);
-    return sum + (addon ? addon.price : 0);
-  }, 0);
-  const subtotal = baseFare + locationFee + addonTotal;
-  const gst = Math.round(subtotal * 0.18);
-  const total = subtotal + gst;
-
-  return `
-    <div class="booking-step-content animate-fade-in-up">
-      <h3 class="booking-step-title">💳 Payment</h3>
-
-      <!-- Coupon Code -->
-      <div style="display: flex; gap: var(--space-3); margin-bottom: var(--space-6);">
-        <input type="text" class="input" id="coupon-code" placeholder="Enter coupon code" style="flex: 1;">
-        <button class="btn btn-outline" onclick="applyCoupon()" id="apply-coupon-btn">Apply</button>
-      </div>
-
-      <!-- Price Summary -->
-      <div class="booking-summary" style="margin-bottom: var(--space-6);">
-        <div class="booking-summary-row">
-          <span style="color: var(--color-text-secondary);">
-            Base fare (${days >= 1 ? days + ' day' + (days > 1 ? 's' : '') : Math.max(4, hours) + ' hours'})
-          </span>
-          <span style="color: var(--color-text-primary);">₹${baseFare.toLocaleString()}</span>
-        </div>
-        ${locationFee > 0 ? `
-          <div class="booking-summary-row">
-            <span style="color: var(--color-text-secondary);">${booking.location === 'airport' ? 'Airport' : 'Home'} pickup</span>
-            <span style="color: var(--color-text-primary);">₹${locationFee}</span>
+          <!-- Payment Form -->
+          <div class="payment-form" id="payment-form-content">
+            ${renderPaymentMethodForm('upi', total)}
           </div>
-        ` : ''}
-        ${addonTotal > 0 ? `
-          <div class="booking-summary-row">
-            <span style="color: var(--color-text-secondary);">Add-ons (${booking.addons.length})</span>
-            <span style="color: var(--color-text-primary);">₹${addonTotal.toLocaleString()}</span>
-          </div>
-        ` : ''}
-        <div class="booking-summary-row">
-          <span style="color: var(--color-text-secondary);">GST (18%)</span>
-          <span style="color: var(--color-text-primary);">₹${gst.toLocaleString()}</span>
-        </div>
-        <div class="booking-summary-row booking-summary-total" style="margin-top: var(--space-2); padding-top: var(--space-3);">
-          <span>Total Amount</span>
-          <span style="font-size: var(--text-xl); color: var(--color-accent);">₹${total.toLocaleString()}</span>
-        </div>
-      </div>
 
-      <!-- Card Details -->
-      <div style="margin-bottom: var(--space-6);">
-        <h4 style="margin-bottom: var(--space-4);">Card Details</h4>
-        <div class="input-group" style="margin-bottom: var(--space-4);">
-          <label for="card-name">Name on Card</label>
-          <input type="text" class="input" id="card-name" placeholder="John Doe" value="${AppState.currentUser?.name || ''}">
-        </div>
-        <div class="input-group" style="margin-bottom: var(--space-4);">
-          <label for="card-number">Card Number</label>
-          <input type="text" class="input" id="card-number" placeholder="4242 4242 4242 4242" maxlength="19"
-            oninput="this.value = this.value.replace(/\\D/g,'').replace(/(\\d{4})/g,'$1 ').trim()">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
-          <div class="input-group">
-            <label for="card-expiry">Expiry Date</label>
-            <input type="text" class="input" id="card-expiry" placeholder="MM/YY" maxlength="5"
-              oninput="this.value = this.value.replace(/\\D/g,'').replace(/(\\d{2})(\\d)/, '$1/$2')">
-          </div>
-          <div class="input-group">
-            <label for="card-cvv">CVV</label>
-            <input type="password" class="input" id="card-cvv" placeholder="•••" maxlength="3">
-          </div>
-        </div>
-      </div>
+          <!-- Booking Summary -->
+          <div class="payment-summary">
+            <div style="display: flex; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div style="width: 100px; height: 70px; background: var(--color-bg-input); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0;">
+                ${car.emoji}
+              </div>
+              <div>
+                <h4 style="font-size: var(--text-sm); margin-bottom: 2px;">${car.name}</h4>
+                <span class="rating-badge" style="font-size: 10px; padding: 2px 8px;">★ ${car.rating} | ${car.trips} trips</span>
+              </div>
+            </div>
 
-      <div class="booking-actions">
-        <button class="btn btn-secondary" style="flex: 1;" onclick="prevBookingStep()">← Back</button>
-        <button class="btn btn-accent btn-lg" style="flex: 2;" onclick="confirmBooking(${total})" id="pay-btn">
-          🔒 Pay ₹${total.toLocaleString()}
-        </button>
-      </div>
+            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--color-border-light); border-bottom: 1px solid var(--color-border-light);">
+              <div style="text-align: center; flex: 1;">
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">${getShortDate('pickup')}</div>
+                <div style="font-size: var(--text-sm); font-weight: 600;">${getShortTime('pickup')}</div>
+              </div>
+              <span style="color: var(--color-text-muted);">→</span>
+              <div style="text-align: center; flex: 1;">
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">${getShortDate('dropoff')}</div>
+                <div style="font-size: var(--text-sm); font-weight: 600;">${getShortTime('dropoff')}</div>
+              </div>
+            </div>
 
-      <p style="text-align: center; font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-4);">
-        🔒 Your payment is secured with 256-bit SSL encryption
-      </p>
-    </div>
-  `;
-}
+            <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-4);">
+              📍 Pickup location: ${AppState.selectedLocation || 'Indiranagar Club, Bangalore'}
+            </div>
 
-function renderBookingStep4(car) {
-  const booking = AppState.currentBooking;
-  const tripId = 'DE' + Date.now().toString().slice(-8);
-
-  return `
-    <div class="booking-step-content animate-fade-in-up">
-      <div class="confirmation-card">
-        <div class="confirmation-icon">✓</div>
-        <h2>Booking Confirmed!</h2>
-        <p style="color: var(--color-text-secondary); margin-bottom: var(--space-4);">Your trip has been booked successfully.</p>
-
-        <div class="trip-id">${tripId}</div>
-
-        <div class="confirmation-details">
-          <div class="confirmation-detail-row">
-            <span style="color: var(--color-text-tertiary);">Car</span>
-            <span style="color: var(--color-text-primary); font-weight: 600;">${car.name}</span>
+            <div style="border-top: 1px solid var(--color-border-light); padding-top: var(--space-3);">
+              <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--space-2);">
+                <span>Base Fare</span>
+                <span>₹${car.pricePerDay.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--space-2);">
+                <span>Trip Protection</span>
+                <span>₹${tripProtection.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--space-2);">
+                <span>Refundable Deposit</span>
+                <span>₹${deposit.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--space-2);">
+                <span>GST (18%)</span>
+                <span>₹${gst.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: var(--text-base); padding-top: var(--space-3); border-top: 1px solid var(--color-border-light); margin-top: var(--space-2);">
+                <span>Pay</span>
+                <span>₹${total.toLocaleString()}</span>
+              </div>
+              <a href="#" style="font-size: var(--text-xs); color: var(--color-primary); font-weight: 600; display: block; text-align: right; margin-top: var(--space-1);">View Details</a>
+            </div>
           </div>
-          <div class="confirmation-detail-row">
-            <span style="color: var(--color-text-tertiary);">Pickup</span>
-            <span style="color: var(--color-text-primary);">${formatDateTime(booking.pickup) || 'As selected'}</span>
-          </div>
-          <div class="confirmation-detail-row">
-            <span style="color: var(--color-text-tertiary);">Drop-off</span>
-            <span style="color: var(--color-text-primary);">${formatDateTime(booking.dropoff) || 'As selected'}</span>
-          </div>
-          <div class="confirmation-detail-row">
-            <span style="color: var(--color-text-tertiary);">Location</span>
-            <span style="color: var(--color-text-primary);">${booking.location === 'airport' ? 'Airport Pickup' : booking.location === 'delivery' ? 'Home Delivery' : 'DriveEase Hub'}</span>
-          </div>
-          <div class="confirmation-detail-row">
-            <span style="color: var(--color-text-tertiary);">Status</span>
-            <span class="badge badge-success">Confirmed</span>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: var(--space-4); justify-content: center; margin-top: var(--space-8);">
-          <a href="#/dashboard" class="btn btn-primary btn-lg" id="view-trips-btn">View My Trips</a>
-          <a href="#/" class="btn btn-secondary btn-lg">Back to Home</a>
         </div>
       </div>
     </div>
   `;
 }
 
-function nextBookingStep() {
-  const step = AppState.currentBooking.step;
+function renderPaymentMethodForm(method, total) {
+  switch (method) {
+    case 'upi':
+      return `
+        <div>
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-1);">UPI</h3>
+          <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6);">Amount: ₹${total.toLocaleString()}</p>
+          
+          <div style="text-align: center; margin-bottom: var(--space-6);">
+            <h4 style="color: var(--color-primary); margin-bottom: var(--space-1);">Scan QR & Pay ₹${total.toLocaleString()}</h4>
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-4);">Choose any UPI app you prefer</p>
+            <div style="display: flex; gap: var(--space-3); justify-content: center; margin-bottom: var(--space-4);">
+              <span style="padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-xl);">📱</span>
+              <span style="padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-xl);">💰</span>
+              <span style="padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-xl);">🏦</span>
+            </div>
+            <div style="width: 200px; height: 200px; background: var(--color-bg-input); border-radius: var(--radius-lg); margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--color-border);">
+              <div style="text-align: center; color: var(--color-text-muted);">
+                <div style="font-size: 3rem; margin-bottom: var(--space-2);">📷</div>
+                <div style="font-size: var(--text-xs);">QR Code</div>
+              </div>
+            </div>
+          </div>
 
-  if (step === 1) {
-    const pickup = document.getElementById('booking-pickup')?.value;
-    const dropoff = document.getElementById('booking-dropoff')?.value;
-    const location = document.getElementById('booking-location')?.value;
-
-    if (!pickup || !dropoff) {
-      showToast('warning', 'Missing Dates', 'Please select pickup and drop-off dates');
-      return;
-    }
-
-    if (new Date(dropoff) <= new Date(pickup)) {
-      showToast('error', 'Invalid Dates', 'Drop-off must be after pickup');
-      return;
-    }
-
-    AppState.currentBooking.pickup = pickup;
-    AppState.currentBooking.dropoff = dropoff;
-    AppState.currentBooking.location = location;
+          <div style="text-align: center; margin-bottom: var(--space-4);">
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted);">Or enter UPI ID</p>
+            <div style="display: flex; gap: var(--space-2); max-width: 400px; margin: var(--space-3) auto 0;">
+              <input type="text" class="input" placeholder="yourname@upi" id="upi-id">
+              <button class="btn btn-primary" onclick="processPayment()">Pay ₹${total.toLocaleString()}</button>
+            </div>
+          </div>
+        </div>
+      `;
+    case 'card':
+      return `
+        <div>
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-1);">Credit / Debit Card</h3>
+          <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6);">Amount: ₹${total.toLocaleString()}</p>
+          
+          <div class="input-group" style="margin-bottom: var(--space-4);">
+            <label>Card Number</label>
+            <input type="text" class="input" placeholder="1234 5678 9012 3456" maxlength="19">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4);">
+            <div class="input-group">
+              <label>Expiry Date</label>
+              <input type="text" class="input" placeholder="MM/YY" maxlength="5">
+            </div>
+            <div class="input-group">
+              <label>CVV</label>
+              <input type="password" class="input" placeholder="•••" maxlength="3">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: var(--space-6);">
+            <label>Cardholder Name</label>
+            <input type="text" class="input" placeholder="Name on card">
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" onclick="processPayment()">Pay ₹${total.toLocaleString()}</button>
+          <div style="display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-4); opacity: 0.5;">
+            <span style="font-size: var(--text-xs);">🔒 Secured by</span>
+            <span style="font-size: var(--text-xs);">VISA</span>
+            <span style="font-size: var(--text-xs);">Mastercard</span>
+            <span style="font-size: var(--text-xs);">RuPay</span>
+          </div>
+        </div>
+      `;
+    case 'netbanking':
+      return `
+        <div>
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-1);">Net Banking</h3>
+          <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6);">Amount: ₹${total.toLocaleString()}</p>
+          
+          <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-3);">Popular Banks</h4>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-bottom: var(--space-6);">
+            ${['🏦 SBI', '🏛️ HDFC', '🏦 ICICI', '🏛️ Axis', '🏦 Kotak', '🏛️ BOB'].map(bank => `
+              <button class="card" style="padding: var(--space-3); text-align: center; font-size: var(--text-sm); font-weight: 600; cursor: pointer;" onclick="processPayment()">${bank}</button>
+            `).join('')}
+          </div>
+          
+          <div class="input-group" style="margin-bottom: var(--space-4);">
+            <label>Other Banks</label>
+            <select class="select">
+              <option>Select your bank</option>
+              <option>State Bank of India</option>
+              <option>HDFC Bank</option>
+              <option>ICICI Bank</option>
+              <option>Axis Bank</option>
+              <option>Kotak Mahindra Bank</option>
+              <option>Bank of Baroda</option>
+              <option>Punjab National Bank</option>
+              <option>Union Bank of India</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full btn-lg" onclick="processPayment()">Pay ₹${total.toLocaleString()}</button>
+        </div>
+      `;
+    case 'wallet':
+      const balance = AppState.currentUser?.walletBalance || 0;
+      const canPay = balance >= total;
+      return `
+        <div>
+          <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-1);">DriveEase Wallet</h3>
+          <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6);">Amount: ₹${total.toLocaleString()}</p>
+          
+          <div class="card" style="padding: var(--space-6); text-align: center; margin-bottom: var(--space-6); background: var(--gradient-primary); color: white; border: none;">
+            <p style="font-size: var(--text-sm); opacity: 0.8; margin-bottom: var(--space-2);">Available Balance</p>
+            <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800;">₹${balance.toLocaleString()}</div>
+          </div>
+          
+          ${canPay ? `
+            <button class="btn btn-primary btn-full btn-lg" onclick="processPayment()">Pay ₹${total.toLocaleString()} from Wallet</button>
+          ` : `
+            <div class="card" style="padding: var(--space-4); text-align: center; border-color: var(--color-warning);">
+              <p style="color: var(--color-warning); font-weight: 600; font-size: var(--text-sm);">⚠️ Insufficient Balance</p>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-1);">You need ₹${(total - balance).toLocaleString()} more. Add money to your wallet or choose another payment method.</p>
+            </div>
+          `}
+        </div>
+      `;
+    default:
+      return '';
   }
-
-  AppState.currentBooking.step = step + 1;
-  saveState();
-  renderPage(() => renderBookingPage({ id: AppState.currentBooking.carId }));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function prevBookingStep() {
-  AppState.currentBooking.step = Math.max(1, AppState.currentBooking.step - 1);
-  saveState();
-  renderPage(() => renderBookingPage({ id: AppState.currentBooking.carId }));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+function selectPaymentMethod(method, element) {
+  document.querySelectorAll('.payment-method-item').forEach(i => i.classList.remove('active'));
+  element.classList.add('active');
 
-function toggleAddon(addonId) {
-  const addons = AppState.currentBooking.addons || [];
-  const idx = addons.indexOf(addonId);
-  if (idx >= 0) {
-    addons.splice(idx, 1);
-  } else {
-    addons.push(addonId);
-  }
-  AppState.currentBooking.addons = addons;
+  const carId = window.location.hash.split('/booking/')[1];
+  const car = AppData.CARS.find(c => c.id === parseInt(carId));
+  if (!car) return;
 
-  // Update UI
-  const card = document.getElementById(`addon-${addonId}`);
-  if (card) card.classList.toggle('selected');
-}
+  const tripProtection = Math.round(car.pricePerDay * 0.15);
+  const deposit = car.type === 'luxury' ? 2000 : car.type === 'suv' ? 1000 : 500;
+  const gst = Math.round(car.pricePerDay * 0.18);
+  const total = car.pricePerDay + tripProtection + deposit + gst;
 
-function applyCoupon() {
-  const code = document.getElementById('coupon-code')?.value?.trim();
-  if (!code) {
-    showToast('warning', 'Enter Code', 'Please enter a coupon code');
-    return;
-  }
-
-  if (code.toUpperCase() === 'DRIVE20' || code.toUpperCase() === 'FIRST50') {
-    showToast('success', 'Coupon Applied!', `Code "${code.toUpperCase()}" applied successfully`);
-  } else {
-    showToast('error', 'Invalid Code', 'This coupon code is not valid');
+  const form = document.getElementById('payment-form-content');
+  if (form) {
+    form.innerHTML = renderPaymentMethodForm(method, total);
+    form.style.animation = 'fadeIn 0.3s var(--ease-out)';
   }
 }
 
-function confirmBooking(total) {
-  const cardNumber = document.getElementById('card-number')?.value;
-  const cardExpiry = document.getElementById('card-expiry')?.value;
-  const cardCvv = document.getElementById('card-cvv')?.value;
+function processPayment() {
+  const carId = window.location.hash.split('/booking/')[1];
+  const car = AppData.CARS.find(c => c.id === parseInt(carId));
 
-  if (!cardNumber || cardNumber.replace(/\s/g, '').length < 16) {
-    showToast('error', 'Invalid Card', 'Please enter a valid card number');
-    return;
-  }
-  if (!cardExpiry || cardExpiry.length < 5) {
-    showToast('error', 'Invalid Expiry', 'Please enter a valid expiry date');
-    return;
-  }
-  if (!cardCvv || cardCvv.length < 3) {
-    showToast('error', 'Invalid CVV', 'Please enter a valid CVV');
-    return;
-  }
+  // Create booking
+  const booking = {
+    id: Date.now(),
+    carId: car.id,
+    userId: AppState.currentUser.id,
+    pickupDate: AppState.pickupDate || new Date().toISOString(),
+    dropoffDate: AppState.dropoffDate || new Date(Date.now() + 86400000 * 2).toISOString(),
+    location: AppState.selectedLocation || 'Indiranagar Club, Bangalore',
+    totalAmount: car.pricePerDay,
+    status: 'confirmed',
+    createdAt: new Date().toISOString(),
+  };
 
-  // Simulate payment
-  const payBtn = document.getElementById('pay-btn');
-  if (payBtn) {
-    payBtn.innerHTML = '<span class="animate-spin" style="display:inline-block;">⏳</span> Processing...';
-    payBtn.disabled = true;
-  }
+  if (!AppState.bookings) AppState.bookings = [];
+  AppState.bookings.push(booking);
 
-  setTimeout(() => {
-    // Save booking to history
-    const tripId = 'DE' + Date.now().toString().slice(-8);
-    const car = AppData.CARS.find(c => c.id === AppState.currentBooking.carId);
-    const newTrip = {
-      id: tripId,
-      carId: AppState.currentBooking.carId,
-      carName: car?.name || 'Unknown',
-      carEmoji: car?.emoji || '🚗',
-      pickup: AppState.currentBooking.pickup,
-      dropoff: AppState.currentBooking.dropoff,
-      location: AppState.currentBooking.location,
-      addons: AppState.currentBooking.addons,
-      total: total,
-      status: 'upcoming',
-      bookedAt: new Date().toISOString(),
-    };
-
-    AppState.bookings = AppState.bookings || [];
-    AppState.bookings.push(newTrip);
-
-    AppState.currentBooking.step = 4;
-    saveState();
-
-    showToast('success', 'Payment Successful!', `₹${total.toLocaleString()} charged to your card`);
-    renderPage(() => renderBookingPage({ id: AppState.currentBooking.carId }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, 2000);
+  showToast('success', 'Booking Confirmed! 🎉', `Your ${car.name} is ready. Check My Bookings for details.`);
+  setTimeout(() => navigateTo('/dashboard?tab=bookings'), 1500);
 }

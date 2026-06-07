@@ -4,9 +4,8 @@
 
 function renderAdminPage() {
   // Check admin access
-  if (!AppState.isLoggedIn || (AppState.currentUser && AppState.currentUser.role !== 'admin')) {
+  if (!AppState.currentUser || AppState.currentUser.role !== 'admin') {
     return `
-    
       <div class="admin-page">
         <div class="container">
           <div class="empty-state" style="min-height: 60vh;">
@@ -26,11 +25,11 @@ function renderAdminPage() {
   return `
     <div class="admin-page">
       <div class="container">
-        <div class="admin-header animate-fade-in">
+        <div class="page-header animate-fade-in">
           <div>
             <h1>
               Admin Dashboard
-              <span class="admin-header-badge">ADMIN</span>
+              <span class="page-header-badge">ADMIN</span>
             </h1>
             <p style="color: var(--color-text-tertiary); margin-top: var(--space-1);">Welcome back, ${AppState.currentUser?.name || 'Admin'}</p>
           </div>
@@ -73,53 +72,45 @@ function renderAdminOverview() {
   return `
     <div class="animate-fade-in-up">
       <!-- Stats -->
-      <div class="admin-stats">
-        <div class="admin-stat-card revenue">
-          <div class="admin-stat-header">
-            <div class="admin-stat-icon revenue">💰</div>
-            <span class="admin-stat-trend up">↑ 12%</span>
-          </div>
-          <div class="admin-stat-value">₹${totalRevenue.toLocaleString()}</div>
-          <div class="admin-stat-label">Total Revenue</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon primary">💰</div>
+          <div class="stat-value">₹${totalRevenue.toLocaleString()}</div>
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-change up">↑ 12%</div>
         </div>
-        <div class="admin-stat-card bookings">
-          <div class="admin-stat-header">
-            <div class="admin-stat-icon bookings">📋</div>
-            <span class="admin-stat-trend up">↑ 8%</span>
-          </div>
-          <div class="admin-stat-value">${allBookings.length}</div>
-          <div class="admin-stat-label">Total Bookings</div>
+        <div class="stat-card">
+          <div class="stat-icon accent">📋</div>
+          <div class="stat-value">${allBookings.length}</div>
+          <div class="stat-label">Total Bookings</div>
+          <div class="stat-change up">↑ 8%</div>
         </div>
-        <div class="admin-stat-card users">
-          <div class="admin-stat-header">
-            <div class="admin-stat-icon users">👥</div>
-            <span class="admin-stat-trend up">↑ 25%</span>
-          </div>
-          <div class="admin-stat-value">${totalUsers}</div>
-          <div class="admin-stat-label">Registered Users</div>
+        <div class="stat-card">
+          <div class="stat-icon info">👥</div>
+          <div class="stat-value">${totalUsers}</div>
+          <div class="stat-label">Registered Users</div>
+          <div class="stat-change up">↑ 25%</div>
         </div>
-        <div class="admin-stat-card fleet">
-          <div class="admin-stat-header">
-            <div class="admin-stat-icon fleet">🚗</div>
-            <span class="admin-stat-trend up">↑ 5%</span>
-          </div>
-          <div class="admin-stat-value">${totalCars}</div>
-          <div class="admin-stat-label">Total Cars</div>
+        <div class="stat-card">
+          <div class="stat-icon success">🚗</div>
+          <div class="stat-value">${totalCars}</div>
+          <div class="stat-label">Total Cars</div>
+          <div class="stat-change up">↑ 5%</div>
         </div>
       </div>
 
-      <div class="admin-grid-2">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
         <!-- Revenue Chart -->
         ${renderRevenueChart()}
 
         <!-- Recent Bookings -->
-        <div class="admin-chart-container">
+        <div class="card" style="padding: var(--space-5);">
           <div class="admin-chart-header">
             <h4>Recent Bookings</h4>
           </div>
           <div style="display: flex; flex-direction: column; gap: var(--space-3);">
             ${allBookings.slice(0, 5).map(b => `
-              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-bg-glass); border-radius: var(--radius-md);">
+              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-bg-input); border-radius: var(--radius-md);">
                 <span style="font-size: 1.5rem;">${b.carEmoji || '🚗'}</span>
                 <div style="flex: 1;">
                   <div style="font-weight: 600; font-size: var(--text-sm);">${b.carName || 'Unknown'}</div>
@@ -140,7 +131,7 @@ function renderAdminOverview() {
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4);">
           ${AppData.CARS.sort((a, b) => b.trips - a.trips).slice(0, 6).map((car, i) => `
-            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-bg-glass); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-bg-input); border-radius: var(--radius-md);">
               <span style="font-size: var(--text-lg); font-weight: 800; color: var(--color-text-muted); width: 24px;">#${i + 1}</span>
               <span style="font-size: 1.3rem;">${car.emoji}</span>
               <div style="flex: 1;">
@@ -427,7 +418,7 @@ function renderAdminReports() {
         ${renderRevenueChart()}
 
         <!-- Fleet Composition -->
-        <div class="admin-chart-container">
+        <div class="card" style="padding: var(--space-5);">
           <div class="admin-chart-header">
             <h4>🚗 Fleet Composition</h4>
           </div>
@@ -440,7 +431,7 @@ function renderAdminReports() {
                     <span style="text-transform: capitalize; font-weight: 600;">${type}</span>
                     <span style="color: var(--color-text-tertiary);">${count} cars (${pct}%)</span>
                   </div>
-                  <div style="height: 8px; background: var(--color-bg-glass); border-radius: var(--radius-full); overflow: hidden;">
+                  <div style="height: 8px; background: var(--color-bg-input); border-radius: var(--radius-full); overflow: hidden;">
                     <div style="height: 100%; width: ${pct}%; background: var(--gradient-primary); border-radius: var(--radius-full); transition: width 0.5s var(--ease-out);"></div>
                   </div>
                 </div>
@@ -457,7 +448,7 @@ function renderAdminReports() {
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-4);">
           ${Object.entries(cityRevenue).sort((a, b) => b[1] - a[1]).map(([city, revenue]) => `
-            <div style="padding: var(--space-4); background: var(--color-bg-glass); border-radius: var(--radius-md); text-align: center;">
+            <div style="padding: var(--space-4); background: var(--color-bg-input); border-radius: var(--radius-md); text-align: center;">
               <div style="font-weight: 600; margin-bottom: var(--space-1);">${city}</div>
               <div style="font-family: var(--font-display); font-size: var(--text-xl); font-weight: 800; color: var(--color-accent);">₹${revenue.toLocaleString()}</div>
             </div>

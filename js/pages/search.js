@@ -1,260 +1,312 @@
 // ========================================
-// DriveEase — Search Page
+// DriveEase — Search Page (ZoomCar-Style)
 // ========================================
 
-let searchFilters = {
-  city: '',
-  type: '',
-  transmission: '',
-  fuel: '',
-  seats: '',
-  minPrice: 0,
-  maxPrice: 10000,
-  sort: 'rating',
-};
-
-function renderSearchPage(params = {}) {
-  // Apply URL params
-  if (params.city) searchFilters.city = params.city;
-  if (params.type) searchFilters.type = params.type;
-  if (params.fuel) searchFilters.fuel = params.fuel;
-
-  const filteredCars = getFilteredCars();
+function renderSearchPage() {
+  const city = AppState.selectedCity || 'bangalore';
+  const cityName = AppData.CITIES.find(c => c.id === city)?.name || 'Bangalore';
 
   return `
     <div class="search-page">
-      <div class="container">
-        ${renderSearchBar({ compact: true, city: searchFilters.city })}
+      <!-- Sticky Search Header -->
+      <div class="search-header">
+        <div class="container">
+          <div class="search-header-inner">
+            <div class="search-location" onclick="openCityPicker()" style="cursor: pointer;">
+              📍 <span id="search-city-name">${cityName}</span> <span style="color: var(--color-text-muted); font-size: var(--text-xs);">▾</span>
+            </div>
+            <div class="search-dates">
+              <div class="search-date-box" onclick="openHomeDatePicker('pickup')">
+                <div class="date">${getShortDate('pickup')}</div>
+                <div class="time">${getShortTime('pickup')}</div>
+              </div>
+              <span style="color: var(--color-text-muted);">→</span>
+              <div class="search-date-box" onclick="openHomeDatePicker('dropoff')">
+                <div class="date">${getShortDate('dropoff')}</div>
+                <div class="time">${getShortTime('dropoff')}</div>
+              </div>
+            </div>
+            <div style="margin-left: var(--space-4);">
+              <select class="select" style="min-width: 150px;" id="search-sort" onchange="applySearchFilters()">
+                <option value="relevance">Relevance</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+                <option value="distance">Nearest First</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="container">
         <div class="search-layout">
-          <!-- Sidebar Filters -->
-          <aside class="search-sidebar" id="search-sidebar">
-            <!-- Car Type -->
-            <div class="filter-group">
-              <div class="filter-group-title">Car Type</div>
-              <div class="filter-options">
-                ${['hatchback', 'sedan', 'suv', 'luxury'].map(type => `
-                  <button class="filter-chip ${searchFilters.type === type ? 'active' : ''}"
-                    onclick="setFilter('type', '${type}')" id="filter-type-${type}">
-                    ${type === 'hatchback' ? '🚗' : type === 'sedan' ? '🚘' : type === 'suv' ? '🚙' : '🏎️'}
-                    ${type.charAt(0).toUpperCase() + type.slice(1)}
-                    <span style="margin-left: auto; font-size: var(--text-xs); opacity: 0.6;">
-                      ${AppData.CARS.filter(c => c.type === type).length}
-                    </span>
-                  </button>
-                `).join('')}
+          <!-- Left Sidebar Filters -->
+          <div class="search-sidebar" id="search-filters-sidebar">
+            <h3 style="font-size: var(--text-base); font-weight: 700; margin-bottom: var(--space-6);">Filters</h3>
+
+            <!-- Search -->
+            <div class="filter-section">
+              <input type="text" class="input" placeholder="🔍 Search for model, features..." id="search-query" oninput="applySearchFilters()">
+            </div>
+
+            <!-- Distance -->
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Distance <span class="toggle-icon">▴</span>
+              </div>
+              <div class="filter-content">
+                <input type="range" class="range-slider" min="0" max="100" value="50" id="filter-distance" oninput="updateDistanceLabel(this.value)">
+                <div class="filter-range-labels">
+                  <span>Near</span>
+                  <span id="distance-label">50 km</span>
+                  <span>Far</span>
+                </div>
               </div>
             </div>
 
-            <!-- Transmission -->
-            <div class="filter-group">
-              <div class="filter-group-title">Transmission</div>
-              <div class="filter-options">
-                ${['manual', 'automatic'].map(t => `
-                  <button class="filter-chip ${searchFilters.transmission === t ? 'active' : ''}"
-                    onclick="setFilter('transmission', '${t}')" id="filter-trans-${t}">
-                    ⚙️ ${t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
+            <!-- Car Type -->
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Car Type <span class="toggle-icon">▴</span>
+              </div>
+              <div class="filter-content">
+                ${['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury'].map(type => `
+                  <label class="filter-option">
+                    <input type="checkbox" value="${type.toLowerCase()}" class="filter-type" onchange="applySearchFilters()">
+                    <span>${type}</span>
+                  </label>
                 `).join('')}
               </div>
             </div>
 
             <!-- Fuel Type -->
-            <div class="filter-group">
-              <div class="filter-group-title">Fuel Type</div>
-              <div class="filter-options">
-                ${['petrol', 'diesel', 'electric', 'hybrid'].map(f => `
-                  <button class="filter-chip ${searchFilters.fuel === f ? 'active' : ''}"
-                    onclick="setFilter('fuel', '${f}')" id="filter-fuel-${f}">
-                    ${f === 'electric' ? '⚡' : f === 'hybrid' ? '🔋' : '⛽'} ${f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Fuel Type <span class="toggle-icon">▴</span>
+              </div>
+              <div class="filter-content">
+                ${['Petrol', 'Diesel', 'Electric', 'CNG'].map(fuel => `
+                  <label class="filter-option">
+                    <input type="checkbox" value="${fuel}" class="filter-fuel" onchange="applySearchFilters()">
+                    <span>${fuel}</span>
+                  </label>
                 `).join('')}
               </div>
             </div>
 
-            <!-- Seats -->
-            <div class="filter-group">
-              <div class="filter-group-title">Seats</div>
-              <div class="filter-options">
-                ${['4', '5', '7'].map(s => `
-                  <button class="filter-chip ${searchFilters.seats === s ? 'active' : ''}"
-                    onclick="setFilter('seats', '${s}')" id="filter-seats-${s}">
-                    👥 ${s}${s === '7' ? '+' : ''} Seats
-                  </button>
+            <!-- Transmission -->
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Transmission <span class="toggle-icon">▴</span>
+              </div>
+              <div class="filter-content">
+                ${['Automatic', 'Manual'].map(t => `
+                  <label class="filter-option">
+                    <input type="checkbox" value="${t}" class="filter-transmission" onchange="applySearchFilters()">
+                    <span>${t}</span>
+                  </label>
                 `).join('')}
               </div>
             </div>
 
-            <!-- Price Range -->
-            <div class="filter-group">
-              <div class="filter-group-title">Price Range (per hour)</div>
-              <div style="padding: 0 var(--space-2);">
-                <input type="range" class="range-slider" id="price-slider"
-                  min="50" max="1000" value="${searchFilters.maxPrice}"
-                  oninput="updatePriceFilter(this.value)">
-                <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--color-text-tertiary); margin-top: var(--space-2);">
-                  <span>₹50</span>
-                  <span id="price-display">Up to ₹${searchFilters.maxPrice}/hr</span>
-                  <span>₹1000</span>
+            <!-- Total Price Range -->
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Total Price <span class="toggle-icon">▴</span>
+              </div>
+              <div class="filter-content">
+                <input type="range" class="range-slider" min="500" max="25000" value="25000" step="500" id="filter-max-price" oninput="updatePriceLabel(this.value); applySearchFilters()">
+                <div class="filter-range-labels">
+                  <span>₹500</span>
+                  <span id="price-label">₹25,000</span>
                 </div>
               </div>
             </div>
 
-            <!-- Clear Filters -->
-            <button class="btn btn-ghost btn-full" onclick="clearFilters()" id="clear-filters-btn" style="margin-top: var(--space-2);">
-              ✕ Clear All Filters
-            </button>
-          </aside>
-
-          <!-- Results -->
-          <main>
-            <div class="search-results-header">
-              <div>
-                <h3 style="margin-bottom: var(--space-1);">
-                  ${searchFilters.city ? AppData.CITIES.find(c => c.id === searchFilters.city)?.name + ' — ' : ''}Available Cars
-                </h3>
-                <span class="search-results-count" id="results-count">${filteredCars.length} cars found</span>
+            <!-- Seats -->
+            <div class="filter-section">
+              <div class="filter-title" onclick="toggleFilterSection(this)">
+                Seating Capacity <span class="toggle-icon">▴</span>
               </div>
-              <div class="search-sort">
-                <label for="sort-select">Sort by:</label>
-                <select class="select" id="sort-select" onchange="setSort(this.value)" style="width: 160px;">
-                  <option value="rating" ${searchFilters.sort === 'rating' ? 'selected' : ''}>Top Rated</option>
-                  <option value="price-low" ${searchFilters.sort === 'price-low' ? 'selected' : ''}>Price: Low to High</option>
-                  <option value="price-high" ${searchFilters.sort === 'price-high' ? 'selected' : ''}>Price: High to Low</option>
-                  <option value="popularity" ${searchFilters.sort === 'popularity' ? 'selected' : ''}>Most Popular</option>
-                </select>
+              <div class="filter-content">
+                ${['4 Seats', '5 Seats', '6+ Seats', '7+ Seats'].map(s => `
+                  <label class="filter-option">
+                    <input type="checkbox" value="${s.split(' ')[0]}" class="filter-seats" onchange="applySearchFilters()">
+                    <span>${s}</span>
+                  </label>
+                `).join('')}
               </div>
             </div>
 
-            ${filteredCars.length > 0 ? `
-              <div class="cars-grid" id="cars-grid">
-                ${filteredCars.map(car => renderCarCard(car)).join('')}
-              </div>
-            ` : `
-              <div class="empty-state">
-                <div class="empty-state-icon">🔍</div>
-                <h3>No Cars Found</h3>
-                <p>Try adjusting your filters or search in a different city.</p>
-                <button class="btn btn-primary" onclick="clearFilters()" style="margin-top: var(--space-6);">
-                  Clear Filters
-                </button>
-              </div>
-            `}
-          </main>
+            <button class="btn btn-secondary btn-full" onclick="clearAllFilters()" style="margin-top: var(--space-2);">
+              Clear All Filters
+            </button>
+          </div>
+
+          <!-- Search Results -->
+          <div class="search-results" id="search-results">
+            <!-- Filter Chips -->
+            <div class="filter-chips" style="margin-bottom: var(--space-4);">
+              <button class="filter-chip" onclick="toggleFilterChip(this, 'delivery')">🏠 Home Delivery</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, 'professional')">⭐ Professional Host</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, 'guest-fav')">🏆 Guest Favourite</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, 'suv')">🚙 SUV</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, '0-10km')">🚶 0-10 km</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, '2020+')">📅 Model 2020+</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, '6-seater')">💺 6/7 Seater</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, 'automatic')">⚙️ Automatic</button>
+              <button class="filter-chip" onclick="toggleFilterChip(this, '4.5+')">⭐ 4.5+ Rated</button>
+            </div>
+
+            <div class="search-results-header">
+              <span class="search-results-count" id="results-count">Showing 0 cars</span>
+            </div>
+
+            <div class="car-grid" id="search-car-grid">
+              <!-- Cars loaded via JS -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
   `;
 }
 
-function getFilteredCars() {
+function initSearchPage() {
+  applySearchFilters();
+}
+
+function getShortDate(mode) {
+  const d = mode === 'pickup' 
+    ? (AppState.pickupDate ? new Date(AppState.pickupDate) : new Date())
+    : (AppState.dropoffDate ? new Date(AppState.dropoffDate) : (() => { const dd = new Date(); dd.setDate(dd.getDate() + 2); return dd; })());
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+function getShortTime(mode) {
+  const d = mode === 'pickup'
+    ? (AppState.pickupDate ? new Date(AppState.pickupDate) : new Date())
+    : (AppState.dropoffDate ? new Date(AppState.dropoffDate) : (() => { const dd = new Date(); dd.setDate(dd.getDate() + 2); return dd; })());
+  
+  let hours = d.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${hours}:00 ${ampm}`;
+}
+
+function applySearchFilters() {
   let cars = [...AppData.CARS];
 
-  if (searchFilters.city) cars = cars.filter(c => c.city === searchFilters.city);
-  if (searchFilters.type) cars = cars.filter(c => c.type === searchFilters.type);
-  if (searchFilters.transmission) cars = cars.filter(c => c.transmission === searchFilters.transmission);
-  if (searchFilters.fuel) cars = cars.filter(c => c.fuel === searchFilters.fuel);
-  if (searchFilters.seats) cars = cars.filter(c => c.seats >= parseInt(searchFilters.seats));
-  if (searchFilters.maxPrice < 10000) cars = cars.filter(c => c.pricePerHour <= searchFilters.maxPrice);
+  // City filter
+  const city = AppState.selectedCity || 'bangalore';
+  const cityMatches = cars.filter(c => c.city === city);
+  if (cityMatches.length > 0) cars = cityMatches;
+
+  // Search query
+  const query = document.getElementById('search-query')?.value?.toLowerCase() || '';
+  if (query) {
+    cars = cars.filter(c =>
+      c.name.toLowerCase().includes(query) ||
+      c.type.toLowerCase().includes(query) ||
+      c.fuel.toLowerCase().includes(query) ||
+      c.transmission.toLowerCase().includes(query)
+    );
+  }
+
+  // Type filter
+  const types = [...document.querySelectorAll('.filter-type:checked')].map(cb => cb.value);
+  if (types.length) cars = cars.filter(c => types.includes(c.type));
+
+  // Fuel filter
+  const fuels = [...document.querySelectorAll('.filter-fuel:checked')].map(cb => cb.value);
+  if (fuels.length) cars = cars.filter(c => fuels.includes(c.fuel));
+
+  // Transmission filter
+  const trans = [...document.querySelectorAll('.filter-transmission:checked')].map(cb => cb.value);
+  if (trans.length) cars = cars.filter(c => trans.includes(c.transmission));
+
+  // Max price
+  const maxPrice = parseInt(document.getElementById('filter-max-price')?.value || '25000');
+  cars = cars.filter(c => c.pricePerDay <= maxPrice);
 
   // Sort
-  switch (searchFilters.sort) {
-    case 'price-low': cars.sort((a, b) => a.pricePerHour - b.pricePerHour); break;
-    case 'price-high': cars.sort((a, b) => b.pricePerHour - a.pricePerHour); break;
+  const sort = document.getElementById('search-sort')?.value || 'relevance';
+  switch (sort) {
+    case 'price-low': cars.sort((a, b) => a.pricePerDay - b.pricePerDay); break;
+    case 'price-high': cars.sort((a, b) => b.pricePerDay - a.pricePerDay); break;
     case 'rating': cars.sort((a, b) => b.rating - a.rating); break;
-    case 'popularity': cars.sort((a, b) => b.trips - a.trips); break;
+    case 'distance': cars.sort(() => Math.random() - 0.5); break;
+    default: cars.sort((a, b) => b.trips - a.trips);
   }
 
-  return cars;
-}
-
-function setFilter(key, value) {
-  searchFilters[key] = searchFilters[key] === value ? '' : value;
-  refreshSearchResults();
-}
-
-function setSort(value) {
-  searchFilters.sort = value;
-  refreshSearchResults();
-}
-
-function updatePriceFilter(value) {
-  searchFilters.maxPrice = parseInt(value);
-  const display = document.getElementById('price-display');
-  if (display) display.textContent = `Up to ₹${value}/hr`;
-  refreshSearchResults();
-}
-
-function clearFilters() {
-  searchFilters = {
-    city: '',
-    type: '',
-    transmission: '',
-    fuel: '',
-    seats: '',
-    minPrice: 0,
-    maxPrice: 10000,
-    sort: 'rating',
-  };
-  renderPage(renderSearchPage);
-}
-
-function refreshSearchResults() {
-  const filteredCars = getFilteredCars();
-  const grid = document.getElementById('cars-grid');
+  // Render
+  const grid = document.getElementById('search-car-grid');
   const count = document.getElementById('results-count');
+  if (!grid) return;
 
-  if (grid) {
-    if (filteredCars.length > 0) {
-      grid.innerHTML = filteredCars.map(car => renderCarCard(car)).join('');
-    } else {
-      grid.outerHTML = `
-        <div class="empty-state" id="cars-grid">
-          <div class="empty-state-icon">🔍</div>
-          <h3>No Cars Found</h3>
-          <p>Try adjusting your filters or search in a different city.</p>
-          <button class="btn btn-primary" onclick="clearFilters()" style="margin-top: var(--space-6);">
-            Clear Filters
-          </button>
-        </div>
-      `;
-    }
+  if (cars.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1;" class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h3>No cars found</h3>
+        <p>Try adjusting your filters or searching in a different city.</p>
+        <button class="btn btn-primary" style="margin-top: var(--space-4);" onclick="clearAllFilters()">Clear Filters</button>
+      </div>
+    `;
+  } else {
+    grid.innerHTML = cars.map(c => renderCarCardHTML(c)).join('');
   }
 
-  if (count) count.textContent = `${filteredCars.length} cars found`;
-
-  // Update active states on filter chips
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    const onclick = chip.getAttribute('onclick');
-    if (onclick) {
-      const match = onclick.match(/setFilter\('(\w+)',\s*'(\w+)'\)/);
-      if (match) {
-        const [, key, val] = match;
-        chip.classList.toggle('active', searchFilters[key] === val);
-      }
-    }
-  });
+  if (count) count.textContent = `Showing ${cars.length} cars`;
 }
 
-function handleSearchFilter() {
-  const city = document.getElementById('search-city')?.value || '';
-  const type = document.getElementById('search-type')?.value || '';
-
-  searchFilters.city = city;
-  if (type) searchFilters.type = type;
-
-  refreshSearchResults();
+function updateDistanceLabel(val) {
+  const el = document.getElementById('distance-label');
+  if (el) el.textContent = `${val} km`;
 }
 
-function initSearchPage() {
-  // Set initial values from URL params
-  const citySelect = document.getElementById('search-city');
-  if (citySelect && searchFilters.city) {
-    citySelect.value = searchFilters.city;
-  }
+function updatePriceLabel(val) {
+  const el = document.getElementById('price-label');
+  if (el) el.textContent = `₹${parseInt(val).toLocaleString()}`;
+}
 
-  const typeSelect = document.getElementById('search-type');
-  if (typeSelect && searchFilters.type) {
-    typeSelect.value = searchFilters.type;
+function toggleFilterSection(header) {
+  const content = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  if (!content) return;
+
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    if (icon) icon.textContent = '▴';
+  } else {
+    content.style.display = 'none';
+    if (icon) icon.textContent = '▾';
   }
+}
+
+function toggleFilterChip(chip, filter) {
+  chip.classList.toggle('active');
+  // Quick filter logic
+  if (filter === 'suv') {
+    const cb = document.querySelector('.filter-type[value="suv"]');
+    if (cb) cb.checked = chip.classList.contains('active');
+  } else if (filter === 'automatic') {
+    const cb = document.querySelector('.filter-transmission[value="Automatic"]');
+    if (cb) cb.checked = chip.classList.contains('active');
+  }
+  applySearchFilters();
+}
+
+function clearAllFilters() {
+  document.querySelectorAll('.filter-type, .filter-fuel, .filter-transmission, .filter-seats').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.filter-chip.active').forEach(c => c.classList.remove('active'));
+  const q = document.getElementById('search-query');
+  if (q) q.value = '';
+  const mp = document.getElementById('filter-max-price');
+  if (mp) mp.value = '25000';
+  updatePriceLabel('25000');
+  applySearchFilters();
 }

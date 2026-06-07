@@ -1,162 +1,79 @@
 // ========================================
-// DriveEase — User Dashboard Page
+// DriveEase — Dashboard (ZoomCar Profile Style)
 // ========================================
 
 function renderDashboardPage() {
-  if (!AppState.isLoggedIn) {
-    setTimeout(() => openAuthModal('login'), 300);
+  const user = AppState.currentUser;
+  if (!user) {
     return `
-      <div class="dashboard-page">
-        <div class="container">
-          <div class="empty-state" style="min-height: 60vh;">
-            <div class="empty-state-icon">🔒</div>
-            <h3>Login Required</h3>
-            <p>Please login to view your dashboard.</p>
-            <button class="btn btn-primary" onclick="openAuthModal('login')" style="margin-top: var(--space-6);">Login</button>
-          </div>
-        </div>
+      <div class="empty-state" style="padding-top: 120px;">
+        <div class="empty-state-icon">🔐</div>
+        <h3>Login Required</h3>
+        <p>Please login to access your dashboard</p>
+        <button class="btn btn-primary" style="margin-top: var(--space-4);" onclick="openAuthModal()">Login / Signup</button>
       </div>
     `;
   }
 
-  const user = AppState.currentUser;
-  const bookings = AppState.bookings || [];
-  const favorites = AppState.favorites || [];
-  const favCars = AppData.CARS.filter(c => favorites.includes(c.id));
-
-  const upcomingTrips = bookings.filter(b => b.status === 'upcoming');
-  const pastTrips = bookings.filter(b => b.status === 'completed' || b.status === 'cancelled');
-
-  const dashTab = AppState.dashboardTab || 'trips';
+  const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  const activeTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') || 'account';
 
   return `
     <div class="dashboard-page">
       <div class="container">
-        <!-- Header -->
-        <div class="dashboard-header animate-fade-in">
-          <div class="avatar avatar-xl">${user.name.split(' ').map(n => n[0]).join('')}</div>
-          <div class="dashboard-user-info">
-            <h2>${user.name}</h2>
-            <p style="color: var(--color-text-tertiary);">${user.email} · Member since ${user.joinDate}</p>
+        <div class="dashboard-layout">
+          <!-- Left Sidebar -->
+          <div class="dashboard-sidebar">
+            <div class="dashboard-sidebar-user">
+              <div class="dashboard-sidebar-avatar">${initials}</div>
+              <div class="dashboard-sidebar-name">${user.name}</div>
+              <div class="dashboard-sidebar-email">${user.phone || user.email}</div>
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">${user.email}</div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-1);">
+              ${user.isVerified ? `<span style="color: var(--color-success);">✅</span>` : `<span style="color: var(--color-danger);">❌</span>`}
+              <span style="font-size: var(--text-sm);">Profile Document</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-1);">
+              <span style="color: var(--color-success);">✅</span>
+              <span style="font-size: var(--text-sm);">Mobile Number</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-1);">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <span>🎯</span>
+                <span style="font-size: var(--text-sm);">D-Points</span>
+              </div>
+              <span style="font-size: var(--text-xs); color: var(--color-primary); font-weight: 600;">Earn Points!</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4);">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <span>💰</span>
+                <span style="font-size: var(--text-sm);">Credits</span>
+              </div>
+              <span style="font-weight: 700; color: var(--color-primary);">₹${(user.walletBalance || 0).toLocaleString()}</span>
+            </div>
+
+            <div style="border-top: 1px solid var(--color-border-light); padding-top: var(--space-2);">
+              <button class="dashboard-sidebar-item ${activeTab === 'bookings' ? 'active' : ''}" onclick="switchDashboardTab('bookings')">
+                🚗 My Bookings
+              </button>
+              <button class="dashboard-sidebar-item" onclick="navigateTo('/finance')">
+                💳 Saved Cards
+              </button>
+              <button class="dashboard-sidebar-item ${activeTab === 'account' ? 'active' : ''}" onclick="switchDashboardTab('account')">
+                👤 Account
+              </button>
+              <button class="dashboard-sidebar-item ${activeTab === 'favorites' ? 'active' : ''}" onclick="switchDashboardTab('favorites')">
+                ❤️ Favorites
+                ${AppState.favorites.length ? `<span class="item-badge">${AppState.favorites.length}</span>` : ''}
+              </button>
+            </div>
           </div>
-          <div style="margin-left: auto;">
-            <button class="btn btn-secondary btn-sm" onclick="showToast('info', 'Coming Soon', 'Profile editing will be available soon')" id="edit-profile-btn">
-              ✏️ Edit Profile
-            </button>
-          </div>
-        </div>
 
-        <!-- Stats -->
-        <div class="dashboard-stats animate-fade-in-up">
-          <div class="stat-card">
-            <div class="stat-value">${bookings.length}</div>
-            <div class="stat-label">Total Trips</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${upcomingTrips.length}</div>
-            <div class="stat-label">Upcoming</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${favorites.length}</div>
-            <div class="stat-label">Favorites</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">₹${bookings.reduce((s, b) => s + (b.total || 0), 0).toLocaleString()}</div>
-            <div class="stat-label">Total Spent</div>
-          </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="tabs" style="margin-bottom: var(--space-6); width: fit-content;">
-          <button class="tab ${dashTab === 'trips' ? 'active' : ''}" onclick="switchDashTab('trips')" id="tab-trips">
-            🚗 My Trips
-          </button>
-          <button class="tab ${dashTab === 'favorites' ? 'active' : ''}" onclick="switchDashTab('favorites')" id="tab-favorites">
-            ❤️ Favorites (${favorites.length})
-          </button>
-          <button class="tab ${dashTab === 'payments' ? 'active' : ''}" onclick="switchDashTab('payments')" id="tab-payments">
-            💳 Payments
-          </button>
-        </div>
-
-        <!-- Content -->
-        <div class="dashboard-content" id="dashboard-content">
-          ${dashTab === 'trips' ? renderTripsTab(upcomingTrips, pastTrips) : ''}
-          ${dashTab === 'favorites' ? renderFavoritesTab(favCars) : ''}
-          ${dashTab === 'payments' ? renderPaymentsTab(bookings) : ''}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderTripsTab(upcoming, past) {
-  return `
-    <div class="animate-fade-in">
-      ${upcoming.length > 0 ? `
-        <h4 style="margin-bottom: var(--space-4); color: var(--color-primary-light);">
-          📅 Upcoming Trips (${upcoming.length})
-        </h4>
-        ${upcoming.map(trip => renderTripCard(trip)).join('')}
-      ` : ''}
-
-      ${past.length > 0 ? `
-        <h4 style="margin: var(--space-8) 0 var(--space-4); color: var(--color-text-tertiary);">
-          📋 Past Trips (${past.length})
-        </h4>
-        ${past.map(trip => renderTripCard(trip)).join('')}
-      ` : ''}
-
-      ${upcoming.length === 0 && past.length === 0 ? `
-        <div class="empty-state">
-          <div class="empty-state-icon">🚗</div>
-          <h3>No Trips Yet</h3>
-          <p>Book your first self-drive car and start your journey!</p>
-          <a href="#/search" class="btn btn-primary" style="margin-top: var(--space-6);">Browse Cars</a>
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function renderTripCard(trip) {
-  const car = AppData.CARS.find(c => c.id === trip.carId);
-  const statusColors = {
-    upcoming: 'badge-primary',
-    active: 'badge-accent',
-    completed: 'badge-success',
-    cancelled: 'badge-danger',
-  };
-
-  return `
-    <div class="trip-card">
-      <div class="trip-card-image" style="background: ${car?.color || '#333'}15;">
-        ${trip.carEmoji || car?.emoji || '🚗'}
-      </div>
-      <div class="trip-card-info">
-        <div class="trip-card-header">
-          <div>
-            <h4 style="margin-bottom: 2px;">${trip.carName || car?.name || 'Unknown Car'}</h4>
-            <span style="font-size: var(--text-xs); color: var(--color-text-muted);">ID: ${trip.id}</span>
-          </div>
-          <span class="badge ${statusColors[trip.status] || 'badge-primary'}">${trip.status}</span>
-        </div>
-        <div class="trip-card-dates">
-          <span>📅 ${formatDateTime(trip.pickup) || 'N/A'}</span>
-          <span>→</span>
-          <span>${formatDateTime(trip.dropoff) || 'N/A'}</span>
-        </div>
-        <div class="trip-card-footer">
-          <span class="price">
-            <span class="price-amount" style="font-size: var(--text-lg);">₹${(trip.total || 0).toLocaleString()}</span>
-          </span>
-          <div style="display: flex; gap: var(--space-2);">
-            ${trip.status === 'upcoming' ? `
-              <button class="btn btn-ghost btn-sm" onclick="cancelTrip('${trip.id}')" id="cancel-${trip.id}">Cancel</button>
-              <button class="btn btn-outline btn-sm" onclick="showToast('info', 'Coming Soon', 'Trip extension feature coming soon')">Extend</button>
-            ` : trip.status === 'completed' ? `
-              <button class="btn btn-outline btn-sm" onclick="navigateTo('/car/${trip.carId}')">Book Again</button>
-            ` : ''}
+          <!-- Main Content -->
+          <div class="dashboard-main" id="dashboard-content">
+            ${renderDashboardTabContent(activeTab, user)}
           </div>
         </div>
       </div>
@@ -164,76 +81,159 @@ function renderTripCard(trip) {
   `;
 }
 
-function renderFavoritesTab(cars) {
-  if (cars.length === 0) {
-    return `
-      <div class="empty-state animate-fade-in">
-        <div class="empty-state-icon">❤️</div>
-        <h3>No Favorites Yet</h3>
-        <p>Save cars you love and book them later.</p>
-        <a href="#/search" class="btn btn-primary" style="margin-top: var(--space-6);">Browse Cars</a>
-      </div>
-    `;
+function renderDashboardTabContent(tab, user) {
+  switch (tab) {
+    case 'account':
+      return renderAccountTab(user);
+    case 'bookings':
+      return renderBookingsTab(user);
+    case 'favorites':
+      return renderFavoritesTab();
+    default:
+      return renderAccountTab(user);
   }
+}
 
+function renderAccountTab(user) {
   return `
-    <div class="cars-grid animate-fade-in">
-      ${cars.map(car => renderCarCard(car)).join('')}
+    <div>
+      <h1 style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-8);">MY ACCOUNT</h1>
+
+      <div class="card" style="padding: var(--space-8);">
+        <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-6); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border-light);">Account Details</h3>
+
+        <div style="display: grid; grid-template-columns: 120px 1fr; gap: var(--space-4); align-items: center; margin-bottom: var(--space-4);">
+          <label style="font-size: var(--text-sm); color: var(--color-text-tertiary);">Email</label>
+          <span style="font-size: var(--text-sm);">${user.email}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 120px 1fr; gap: var(--space-4); align-items: center; margin-bottom: var(--space-6);">
+          <label style="font-size: var(--text-sm); color: var(--color-text-tertiary);">Mobile *</label>
+          <input type="text" class="input" value="${user.phone || ''}" style="max-width: 240px;" placeholder="Enter phone number">
+        </div>
+
+        <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-6); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border-light);">Personal Details</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+          <div style="display: grid; grid-template-columns: 80px 1fr; gap: var(--space-4); align-items: center;">
+            <label style="font-size: var(--text-sm); color: var(--color-text-tertiary);">Name *</label>
+            <input type="text" class="input" value="${user.name}" id="profile-name">
+          </div>
+          <div style="display: grid; grid-template-columns: 80px 1fr; gap: var(--space-4); align-items: center;">
+            <label style="font-size: var(--text-sm); color: var(--color-text-tertiary);">Gender</label>
+            <select class="select" style="max-width: 160px;">
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top: var(--space-8); display: flex; gap: var(--space-3);">
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+          <button class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
     </div>
   `;
 }
 
-function renderPaymentsTab(bookings) {
+function renderBookingsTab(user) {
+  const bookings = AppState.bookings || [];
+
   if (bookings.length === 0) {
     return `
-      <div class="empty-state animate-fade-in">
-        <div class="empty-state-icon">💳</div>
-        <h3>No Payments</h3>
-        <p>Your payment history will appear here.</p>
+      <div>
+        <h1 style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-8);">MY BOOKINGS</h1>
+        <div class="empty-state" style="padding: var(--space-12);">
+          <div class="empty-state-icon">🚗</div>
+          <h3>No Bookings Found</h3>
+          <p>You haven't made any bookings yet. Start exploring cars!</p>
+          <a href="#/search" class="btn btn-primary" style="margin-top: var(--space-4);">Browse Cars</a>
+        </div>
       </div>
     `;
   }
 
   return `
-    <div class="animate-fade-in" style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="border-bottom: var(--glass-border); text-align: left;">
-            <th style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text-tertiary); font-weight: 600;">Date</th>
-            <th style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text-tertiary); font-weight: 600;">Trip ID</th>
-            <th style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text-tertiary); font-weight: 600;">Car</th>
-            <th style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text-tertiary); font-weight: 600;">Amount</th>
-            <th style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text-tertiary); font-weight: 600;">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${bookings.map(b => `
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm);">${new Date(b.bookedAt).toLocaleDateString()}</td>
-              <td style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-family: monospace; color: var(--color-primary-light);">${b.id}</td>
-              <td style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm);">${b.carEmoji || '🚗'} ${b.carName}</td>
-              <td style="padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: 600;">₹${(b.total || 0).toLocaleString()}</td>
-              <td style="padding: var(--space-3) var(--space-4);"><span class="badge badge-success">Paid</span></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+    <div>
+      <h1 style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-8);">MY BOOKINGS</h1>
+      ${bookings.map(b => {
+        const car = AppData.CARS.find(c => c.id === b.carId) || {};
+        return `
+          <div class="booking-card">
+            <div class="booking-card-image">${car.emoji || '🚗'}</div>
+            <div class="booking-card-info">
+              <div class="booking-card-header">
+                <div class="booking-card-title">${car.name || 'Unknown Car'}</div>
+                <span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'primary' : 'warning'}">${b.status}</span>
+              </div>
+              <div class="booking-card-dates">
+                <span>${formatSearchDate(b.pickupDate)}</span>
+                <span class="arrow">→</span>
+                <span>${formatSearchDate(b.dropoffDate)}</span>
+              </div>
+              <div class="booking-card-footer">
+                <div class="booking-card-location">📍 ${b.location || 'Pickup location'}</div>
+                <div class="booking-card-price">₹${(b.totalAmount || 0).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
     </div>
   `;
 }
 
-function switchDashTab(tab) {
-  AppState.dashboardTab = tab;
-  renderPage(renderDashboardPage);
+function renderFavoritesTab() {
+  const favCars = AppData.CARS.filter(c => AppState.favorites.includes(c.id));
+
+  if (favCars.length === 0) {
+    return `
+      <div>
+        <h1 style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-8);">FAVORITES</h1>
+        <div class="empty-state" style="padding: var(--space-12);">
+          <div class="empty-state-icon">❤️</div>
+          <h3>No Favorites Yet</h3>
+          <p>Save cars you love and they'll show up here!</p>
+          <a href="#/search" class="btn btn-primary" style="margin-top: var(--space-4);">Browse Cars</a>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div>
+      <h1 style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-8);">FAVORITES</h1>
+      <div class="car-grid">
+        ${favCars.map(c => renderCarCardHTML(c)).join('')}
+      </div>
+    </div>
+  `;
 }
 
-function cancelTrip(tripId) {
-  const bookings = AppState.bookings || [];
-  const trip = bookings.find(b => b.id === tripId);
-  if (trip) {
-    trip.status = 'cancelled';
-    saveState();
-    showToast('info', 'Trip Cancelled', `Trip ${tripId} has been cancelled. Refund will be processed in 3-5 business days.`);
-    renderPage(renderDashboardPage);
+// ---- Actions ----
+
+function switchDashboardTab(tab) {
+  // Update sidebar
+  document.querySelectorAll('.dashboard-sidebar-item').forEach(item => item.classList.remove('active'));
+  event.target.closest('.dashboard-sidebar-item')?.classList.add('active');
+
+  // Update content
+  const content = document.getElementById('dashboard-content');
+  if (content) {
+    content.innerHTML = renderDashboardTabContent(tab, AppState.currentUser);
+    content.style.animation = 'fadeIn 0.3s var(--ease-out)';
+  }
+
+  // Update URL without triggering router
+  history.replaceState(null, '', `#/dashboard?tab=${tab}`);
+}
+
+function saveProfile() {
+  const name = document.getElementById('profile-name')?.value;
+  if (name && AppState.currentUser) {
+    AppState.currentUser.name = name;
+    showToast('success', 'Profile Updated', 'Your changes have been saved');
   }
 }

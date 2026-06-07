@@ -126,13 +126,15 @@ async function initApp() {
   // Initial render of app shell
   const app = document.getElementById('app');
   app.innerHTML = `
-    <div class="bg-mesh"></div>
     <div id="nav-container">${renderNavbar()}</div>
     <main id="page-content"></main>
     ${renderFooter()}
     <div id="bottom-nav-container">${renderBottomNav()}</div>
     <div class="toast-container" id="toast-container"></div>
   `;
+
+  // Inject navbar dropdown styles
+  injectNavbarStyles();
 
   // Setup router
   router = new Router();
@@ -165,12 +167,11 @@ async function initApp() {
   });
 
   router.on('/car/:id', (params) => {
-    renderPage(renderCarDetailPage, params);
-    setTimeout(initCarDetailPage, 100);
+    renderPage(() => renderCarDetailPage(params.id));
   });
 
   router.on('/booking/:id', (params) => {
-    renderPage(renderBookingPage, params);
+    renderPage(() => renderBookingPage(params.id));
   });
 
   router.on('/dashboard', () => {

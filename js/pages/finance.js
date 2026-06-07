@@ -3,7 +3,7 @@
 // ========================================
 
 function renderFinancePage() {
-  if (!AppState.isLoggedIn) {
+  if (!AppState.currentUser) {
     setTimeout(() => openAuthModal('login'), 300);
     return `
       <div class="dashboard-page">
@@ -247,7 +247,7 @@ function renderInvoicesTab() {
     <div class="animate-fade-in">
       <div style="display: flex; flex-direction: column; gap: var(--space-4);">
         ${invoices.map(inv => `
-          <div style="display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5); background: var(--gradient-card); border: var(--glass-border); border-radius: var(--radius-lg);">
+          <div style="display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5); background: var(--gradient-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
             <div style="width: 50px; height: 50px; background: var(--color-primary-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📄</div>
             <div style="flex: 1;">
               <div style="font-weight: 700; font-size: var(--text-sm); color: var(--color-primary-light); font-family: monospace;">${inv.id}</div>
@@ -284,7 +284,7 @@ function renderTaxTab() {
   return `
     <div class="animate-fade-in">
       <!-- FY Header -->
-      <div style="margin-bottom: var(--space-6); padding: var(--space-5); background: var(--gradient-card); border: var(--glass-border); border-radius: var(--radius-lg);">
+      <div style="margin-bottom: var(--space-6); padding: var(--space-5); background: var(--gradient-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
             <h4>Financial Year ${currentFY}</h4>
@@ -345,7 +345,7 @@ function renderTaxTab() {
                 <td>₹${baseTotal.toLocaleString()}</td>
                 <td style="font-weight: 700; color: var(--color-warning-light);">₹${sgst.toLocaleString()}</td>
               </tr>
-              <tr style="background: var(--color-bg-glass);">
+              <tr style="background: var(--color-bg-input);">
                 <td style="font-weight: 800;">Total GST</td>
                 <td style="font-weight: 800;">18%</td>
                 <td style="font-weight: 800;">₹${baseTotal.toLocaleString()}</td>
@@ -357,7 +357,7 @@ function renderTaxTab() {
       </div>
 
       <!-- TDS Info -->
-      <div style="margin-top: var(--space-6); padding: var(--space-6); background: var(--gradient-card); border: var(--glass-border); border-radius: var(--radius-lg);">
+      <div style="margin-top: var(--space-6); padding: var(--space-6); background: var(--gradient-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
         <h4 style="margin-bottom: var(--space-3);">ℹ️ TDS Information</h4>
         <p style="font-size: var(--text-sm); color: var(--color-text-secondary); line-height: var(--leading-relaxed);">
           As per Indian tax regulations, TDS at 1% is deducted on rental income above ₹50,000 per annum under Section 194-IB.
