@@ -16,6 +16,7 @@ let AppState = {
   adminTab: 'overview',
   financeTab: 'wallet',
   walletTransactions: [],
+  subscriptions: [],
 };
 
 // ---- State Management ----
@@ -40,6 +41,7 @@ function saveState() {
       bookings: AppState.bookings,
       hostListings: AppState.hostListings,
       walletTransactions: AppState.walletTransactions,
+      subscriptions: AppState.subscriptions,
     }));
   } catch (e) {
     console.warn('Failed to save state:', e);
@@ -189,6 +191,10 @@ async function initApp() {
 
   router.on('/finance', () => {
     renderPage(renderFinancePage);
+  });
+
+  router.on('/subscription', () => {
+    renderPage(renderSubscriptionPage);
   });
 
   router.on('*', () => {

@@ -18,7 +18,7 @@ function renderHomePage() {
           <div class="search-card animate-fade-in-up animate-delay-2">
             <div class="search-card-tabs">
               <button class="search-card-tab active">Daily Drives</button>
-              <button class="search-card-tab" onclick="showToast('info', 'Coming Soon', 'Subscription plans launching soon!')">Subscription</button>
+              <button class="search-card-tab" onclick="navigateTo('/subscription')">Subscription</button>
               <button class="search-card-tab" onclick="showToast('info', 'Coming Soon', 'Weekday pass launching soon!')">Weekday Pass <span style="background: var(--color-accent); color: white; font-size: 10px; padding: 1px 6px; border-radius: var(--radius-full); font-weight: 700;">NEW</span></button>
             </div>
 

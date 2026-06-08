@@ -30,6 +30,7 @@ function renderNavbar() {
 
           <!-- Right: Actions -->
           <div class="navbar-actions">
+            <a href="#/subscription" class="btn btn-outline btn-sm" style="border-radius: var(--radius-full); border-color: #F97316; color: #F97316;">📋 Subscriptions</a>
             <a href="#/host" class="btn btn-outline btn-sm" style="border-radius: var(--radius-full);">Become a Host</a>
 
             ${user ? `
@@ -49,6 +50,7 @@ function renderNavbar() {
                 <a href="#/dashboard?tab=bookings" class="user-dropdown-item">🚗 My Bookings</a>
                 <a href="#/finance" class="user-dropdown-item">💰 Wallet & Payments</a>
                 <a href="#/dashboard?tab=favorites" class="user-dropdown-item">❤️ Favorites</a>
+                <a href="#/subscription" class="user-dropdown-item">📋 My Subscriptions</a>
                 ${user.role === 'admin' ? '<a href="#/admin" class="user-dropdown-item">⚡ Admin Panel</a>' : ''}
                 ${user.role === 'host' ? '<a href="#/host" class="user-dropdown-item">📊 Host Dashboard</a>' : ''}
                 <div style="border-top: 1px solid var(--color-border-light); padding: var(--space-2);"></div>
@@ -80,6 +82,7 @@ function renderNavbar() {
         <a href="#/dashboard" class="mobile-nav-link" onclick="toggleMobileNav()">👤 My Profile</a>
         <a href="#/dashboard?tab=bookings" class="mobile-nav-link" onclick="toggleMobileNav()">🚗 My Bookings</a>
         <a href="#/finance" class="mobile-nav-link" onclick="toggleMobileNav()">💰 Wallet & Payments</a>
+        <a href="#/subscription" class="mobile-nav-link" onclick="toggleMobileNav()">📋 Subscriptions</a>
         <a href="#/dashboard?tab=favorites" class="mobile-nav-link" onclick="toggleMobileNav()">❤️ Favorites</a>
         ${user.role === 'admin' ? '<a href="#/admin" class="mobile-nav-link" onclick="toggleMobileNav()">⚡ Admin Panel</a>' : ''}
         ${user.role === 'host' ? '<a href="#/host" class="mobile-nav-link" onclick="toggleMobileNav()">📊 Host Dashboard</a>' : ''}
